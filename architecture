@@ -1,0 +1,171 @@
+# E-Commerce Analytics Solution Architecture
+
+## Project Overview
+
+This project combines data from two different sources to build an end-to-end analytics solution using Snowflake and Power BI.
+
+The objective is to ingest, transform, and analyze e-commerce data to generate actionable business insights through interactive dashboards.
+
+---
+
+## Business Objectives
+
+### Objective 1: Sales Performance Analysis
+
+Analyze sales trends across products, categories, countries, and time periods to identify:
+
+* Top-performing products
+* High-revenue categories
+* Regional sales patterns
+* Monthly and yearly revenue trends
+
+### Objective 2: Customer Satisfaction Analysis
+
+Analyze customer reviews and ratings to identify:
+
+* Average review scores
+* Customer sentiment trends
+* Product quality issues
+* Relationship between ratings and sales performance
+
+---
+
+## Data Sources
+
+### Source 1: Relational Database
+
+Structured transactional data including:
+
+* Orders
+* Order items
+* Customers
+* Products
+
+### Source 2: Object Store
+
+Semi-structured and unstructured files including:
+
+* Customer reviews
+* Product ratings
+* CSV and JSON files
+
+---
+
+## Technology Stack
+
+* Data Warehouse: Snowflake
+* Data Visualization: Power BI
+* Version Control: Git and GitHub
+* Query Language: SQL
+
+---
+
+## Data Flow Architecture
+
+1. Transactional data is extracted from the relational database.
+2. Review and rating files are collected from the object store.
+3. Data is loaded into the RAW schema in Snowflake.
+4. Data quality checks and transformations are performed in the STAGING schema.
+5. Business-ready tables are created in the ANALYTICS schema.
+6. Power BI connects to the ANALYTICS schema for reporting and visualization.
+
+---
+
+## Snowflake Schema Design
+
+### RAW Schema
+
+Purpose:
+
+* Store source data without modifications
+* Preserve original data for auditing and reprocessing
+
+Tables:
+
+* raw_orders
+* raw_order_items
+* raw_customers
+* raw_products
+* raw_reviews
+
+### STAGING Schema
+
+Purpose:
+
+* Clean and standardize data
+* Remove duplicates
+* Handle missing values
+* Apply business rules
+
+Tables:
+
+* stg_orders
+* stg_customers
+* stg_products
+* stg_reviews
+
+### ANALYTICS Schema
+
+Purpose:
+
+* Store curated data models for reporting
+
+Tables:
+
+* fact_sales
+* fact_reviews
+* dim_customer
+* dim_product
+* dim_date
+
+---
+
+## Dashboard KPIs
+
+### Sales KPIs
+
+* Total Revenue
+* Total Orders
+* Average Order Value
+* Revenue by Category
+* Revenue by Country
+
+### Customer KPIs
+
+* Average Review Score
+* Number of Reviews
+* Customer Satisfaction Trend
+* Top Rated Products
+* Lowest Rated Products
+
+---
+
+## Solution Benefits
+
+* Combines multiple data sources into a unified analytics platform
+* Enables faster business decision-making
+* Provides scalable data storage and processing
+* Delivers interactive dashboards for stakeholders
+* Supports future data source integration
+
+---
+
+## Architecture Diagram
+
+Database Source + Object Store
+
+        ↓
+
+Snowflake RAW Schema
+
+        ↓
+
+Snowflake STAGING Schema
+
+        ↓
+
+Snowflake ANALYTICS Schema
+
+        ↓
+
+Power BI Dashboard

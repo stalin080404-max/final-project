@@ -1,0 +1,85 @@
+# Dashboard Overview
+
+The Power BI dashboard provides an end-to-end view of e-commerce business performance by combining transactional data from a relational database with customer review data from an object store. The dashboard is built using curated tables from the Snowflake ANALYTICS schema.
+
+## Dashboard Objectives
+
+### Objective 1: Sales Performance Analysis
+
+Monitor and analyze sales performance across products, categories, regions, and time periods to identify business trends and growth opportunities.
+
+### Objective 2: Customer Satisfaction Analysis
+
+Measure customer satisfaction using review scores and ratings to understand customer preferences and improve product quality.
+
+---
+
+# Dashboard Page 1: Sales Performance
+
+## Key Performance Indicators (KPIs)
+
+* Total Revenue
+* Total Orders
+* Average Order Value
+* Total Customers
+
+## Visualizations
+
+* Monthly Revenue Trend (Line Chart)
+* Revenue by Product Category (Bar Chart)
+* Revenue by Country or Region (Map Chart)
+* Top 10 Products by Sales (Bar Chart)
+
+## Filters and Slicers
+
+* Order Date
+* Country
+* Product Category
+
+---
+
+# Dashboard Page 2: Customer Satisfaction
+
+## Key Performance Indicators (KPIs)
+
+* Average Review Score
+* Total Reviews
+* Positive Review Percentage
+
+## Visualizations
+
+* Review Score Trend Over Time (Line Chart)
+* Average Rating by Product Category (Bar Chart)
+* Top Rated Products (Bar Chart)
+* Lowest Rated Products (Bar Chart)
+
+## Filters and Slicers
+
+* Review Date
+* Product Category
+* Review Score
+
+---
+
+# Data Source
+
+The dashboard integrates data from two sources:
+
+1. Relational database containing customers, orders, products, and order details.
+2. Object store containing customer reviews and ratings in CSV or JSON format.
+
+---
+
+# Data Processing Flow
+
+Source Systems → Snowflake RAW Schema → Snowflake STAGING Schema → Snowflake ANALYTICS Schema → Power BI Dashboard
+
+---
+
+# Business Value
+
+* Provides a unified view of sales and customer feedback.
+* Enables data-driven decision making.
+* Identifies top-performing products and regions.
+* Tracks customer satisfaction trends.
+* Supports strategic planning and performance monitoring.
