@@ -1,0 +1,124 @@
+# ==========================================
+# ECOMMERCE PIPELINE
+# BRONZE → SILVER → GOLD
+# ==========================================
+
+# --------------------------
+# BRONZE LAYER
+# --------------------------
+
+spark.sql("""
+CREATE OR REPLACE TABLE bronze_customers AS
+SELECT *
+FROM workspace.default.olist_customers_dataset
+""")
+
+spark.sql("""
+CREATE OR REPLACE TABLE bronze_orders AS
+SELECT *
+FROM workspace.default.olist_orders_dataset
+""")
+
+spark.sql("""
+CREATE OR REPLACE TABLE bronze_order_items AS
+SELECT *
+FROM workspace.default.olist_order_items_dataset
+""")
+
+spark.sql("""
+CREATE OR REPLACE TABLE bronze_products AS
+SELECT *
+FROM workspace.default.olist_products_dataset
+""")
+
+spark.sql("""
+CREATE OR REPLACE TABLE bronze_reviews AS
+SELECT *
+FROM workspace.default.olist_order_reviews_dataset
+""")
+
+spark.sql("""
+CREATE OR REPLACE TABLE bronze_payments AS
+SELECT *
+FROM workspace.default.olist_order_payments_dataset
+""")
+
+# --------------------------
+# SILVER LAYER
+# --------------------------
+
+spark.sql("""
+CREATE OR REPLACE TABLE silver_sales AS
+SELECT
+    o.order_id,
+    o.customer_id,
+    o.order_purchase_timestamp,
+    oi.product_id,
+    oi.price,
+    p.payment_value
+FROM bronze_orders o
+JOIN bronze_order_items oi
+    ON o.order_id = oi.order_id
+LEFT JOIN bronze_payments p
+    ON o.order_id = p.order_id
+""")
+
+spark.sql("""
+CREATE OR REPLACE TABLE silver_reviews AS
+SELECT
+    r.review_id,
+    r.order_id,
+    r.review_score,
+    c.customer_state
+FROM bronze_reviews r
+JOIN bronze_orders o
+    ON r.order_id = o.order_id
+JOIN bronze_customers c
+    ON o.customer_id = c.customer_id
+""")
+
+# --------------------------
+# GOLD LAYER
+# --------------------------
+
+spark.sql("""
+CREATE OR REPLACE TABLE gold_revenue_summary AS
+SELECT
+    date_trunc('month', order_purchase_timestamp) AS sales_month,
+    COUNT(DISTINCT order_id) AS total_orders,
+    ROUND(SUM(payment_value), 2) AS total_revenue,
+    ROUND(AVG(payment_value), 2) AS avg_order_value
+FROM silver_sales
+GROUP BY date_trunc('month', order_purchase_timestamp)
+ORDER BY sales_month
+""")
+
+spark.sql("""
+CREATE OR REPLACE TABLE gold_customer_satisfaction AS
+SELECT
+    customer_state,
+    COUNT(*) AS total_reviews,
+    ROUND(AVG(review_score), 2) AS avg_review_score
+FROM silver_reviews
+GROUP BY customer_state
+ORDER BY avg_review_score DESC
+""")
+
+# --------------------------
+# VERIFICATION
+# --------------------------
+
+print("===== TABLES CREATED =====")
+spark.sql("SHOW TABLES").show(truncate=False)
+
+print("===== GOLD REVENUE SUMMARY =====")
+spark.sql("""
+SELECT * 
+FROM gold_revenue_summary
+""").show(truncate=False)
+
+print("===== GOLD CUSTOMER SATISFACTION =====")
+spark.sql("""
+SELECT *
+FROM gold_customer_satisfaction
+""").show(truncate=False)
