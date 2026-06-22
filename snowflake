@@ -1,0 +1,216 @@
+CREATE WAREHOUSE ECOMMERCE_WH
+WAREHOUSE_SIZE = 'XSMALL'
+AUTO_SUSPEND = 60
+AUTO_RESUME = TRUE;
+CREATE DATABASE ECOMMERCE_DB;
+CREATE SCHEMA ECOMMERCE_DB.RAW;
+CREATE SCHEMA ECOMMERCE_DB.STAGING;
+CREATE SCHEMA ECOMMERCE_DB.ANALYTICS;
+USE WAREHOUSE ECOMMERCE_WH;
+USE DATABASE ECOMMERCE_DB;
+USE SCHEMA RAW;ECOMMERCE_DB.RAW
+ALTER TABLE ECOMMERCE_DB.RAW.PAYMENTS
+RENAME TO ORDER_PAYMENTS;
+
+ALTER TABLE ECOMMERCE_DB.RAW.ORDER_REVIEW
+RENAME TO ORDER_REVIEWS;
+SHOW TABLES IN SCHEMA ECOMMERCE_DB.RAW;
+ALTER TABLE ECOMMERCE_DB.RAW.PAYMENTS
+RENAME TO ORDER_PAYMENTS;
+SHOW TABLES IN SCHEMA ECOMMERCE_DB.RAW;
+USE DATABASE ECOMMERCE_DB;
+USE SCHEMA STAGING;
+
+CREATE OR REPLACE TABLE SALES AS
+SELECT
+    oi.order_id,
+    o.customer_id,
+    oi.product_id,
+    oi.seller_id,
+    oi.price,
+    oi.freight_value,
+    o.order_purchase_timestamp,
+    o.order_delivered_customer_date,
+    o.order_status
+FROM ECOMMERCE_DB.RAW.ORDER_ITEMS oi
+JOIN ECOMMERCE_DB.RAW.ORDERS o
+    ON oi.order_id = o.order_id;
+
+CREATE OR REPLACE TABLE CUSTOMER_REVIEWS AS
+SELECT
+    r.review_id,
+    r.order_id,
+    r.review_score,
+    r.review_creation_date,
+    r.review_answer_timestamp,
+    o.customer_id
+FROM ECOMMERCE_DB.RAW.ORDER_REVIEWS r
+JOIN ECOMMERCE_DB.RAW.ORDERS o
+    ON r.order_id = o.order_id;
+SELECT COUNT(*) AS sales_rows
+FROM ECOMMERCE_DB.STAGING.SALES;
+SELECT COUNT(*) AS review_rows
+FROM ECOMMERCE_DB.STAGING.CUSTOMER_REVIEWS;
+
+
+
+USE DATABASE ECOMMERCE_DB;
+USE SCHEMA STAGING;
+
+CREATE OR REPLACE TABLE SALES AS
+SELECT
+    oi.order_id,
+    o.customer_id,
+    oi.product_id,
+    oi.seller_id,
+    oi.price,
+    oi.freight_value,
+    o.order_purchase_timestamp,
+    o.order_delivered_customer_date,
+    o.order_status
+FROM ECOMMERCE_DB.RAW.ORDER_ITEMS oi
+JOIN ECOMMERCE_DB.RAW.ORDERS o
+    ON oi.order_id = o.order_id;
+
+CREATE OR REPLACE TABLE CUSTOMER_REVIEWS AS
+SELECT
+    r.review_id,
+    r.order_id,
+    r.review_score,
+    r.review_creation_date,
+    r.review_answer_timestamp,
+    o.customer_id
+FROM ECOMMERCE_DB.RAW.ORDER_REVIEWS r
+JOIN ECOMMERCE_DB.RAW.ORDERS o
+    ON r.order_id = o.order_id;
+SHOW TABLES IN SCHEMA ECOMMERCE_DB.STAGING;
+SELECT COUNT(*) AS sales_rows
+FROM ECOMMERCE_DB.STAGING.SALES;
+
+SELECT COUNT(*) AS review_rows
+FROM ECOMMERCE_DB.STAGING.CUSTOMER_REVIEWS;
+SHOW TABLES IN SCHEMA ECOMMERCE_DB.STAGING;
+USE DATABASE ECOMMERCE_DB;
+USE SCHEMA ANALYTICS;
+
+CREATE OR REPLACE TABLE REVENUE_SUMMARY AS
+SELECT
+    DATE_TRUNC('MONTH', s.order_purchase_timestamp) AS sales_month,
+    p.product_category_name,
+    COUNT(DISTINCT s.order_id) AS total_orders,
+    SUM(s.price + s.freight_value) AS total_revenue,
+    AVG(s.price + s.freight_value) AS average_order_value
+FROM ECOMMERCE_DB.STAGING.SALES s
+LEFT JOIN ECOMMERCE_DB.RAW.PRODUCTS p
+    ON s.product_id = p.product_id
+WHERE s.order_status = 'delivered'
+GROUP BY 1, 2;
+
+CREATE OR REPLACE TABLE CUSTOMER_SATISFACTION AS
+SELECT
+    DATE_TRUNC('MONTH', s.order_purchase_timestamp) AS review_month,
+    AVG(r.review_score) AS average_review_score,
+
+    AVG(
+        DATEDIFF(
+            'DAY',
+            s.order_purchase_timestamp,
+            s.order_delivered_customer_date
+        )
+    ) AS average_delivery_days,
+
+    COUNT(DISTINCT r.customer_id) AS unique_customers,
+
+    COUNT(*) AS total_reviews
+FROM ECOMMERCE_DB.STAGING.CUSTOMER_REVIEWS r
+JOIN ECOMMERCE_DB.STAGING.SALES s
+    ON r.order_id = s.order_id
+GROUP BY 1;
+SHOW TABLES IN SCHEMA ECOMMERCE_DB.ANALYTICS;
+SELECT COUNT(*) AS revenue_rows
+FROM ECOMMERCE_DB.ANALYTICS.REVENUE_SUMMARY;
+
+SELECT COUNT(*) AS satisfaction_rows
+FROM ECOMMERCE_DB.ANALYTICS.CUSTOMER_SATISFACTION;
+CREATE OR REPLACE TABLE ECOMMERCE_DB.ANALYTICS.CUSTOMER_SATISFACTION AS
+SELECT
+    DATE_TRUNC('MONTH', s.order_purchase_timestamp) AS review_month,
+    p.product_category_name,
+    AVG(r.review_score) AS average_review_score,
+    AVG(
+        DATEDIFF(
+            'DAY',
+            s.order_purchase_timestamp,
+            s.order_delivered_customer_date
+        )
+    ) AS average_delivery_days,
+    COUNT(DISTINCT r.customer_id) AS unique_customers,
+    COUNT(*) AS total_reviews
+FROM ECOMMERCE_DB.STAGING.CUSTOMER_REVIEWS r
+JOIN ECOMMERCE_DB.STAGING.SALES s
+    ON r.order_id = s.order_id
+LEFT JOIN ECOMMERCE_DB.RAW.PRODUCTS p
+    ON s.product_id = p.product_id
+GROUP BY 1, 2;
+SELECT COUNT(*) FROM ECOMMERCE_DB.RAW.CUSTOMERS;
+
+SELECT COUNT(*) FROM ECOMMERCE_DB.RAW.ORDERS;
+
+SELECT COUNT(*) FROM ECOMMERCE_DB.RAW.ORDER_ITEMS;
+
+SELECT COUNT(*) FROM ECOMMERCE_DB.RAW.PRODUCTS;
+
+SELECT COUNT(*) FROM ECOMMERCE_DB.RAW.ORDER_REVIEWS;
+
+SELECT COUNT(*) FROM ECOMMERCE_DB.RAW.ORDER_PAYMENTS;
+SELECT 'CUSTOMERS' AS table_name, COUNT(*) AS row_count
+FROM ECOMMERCE_DB.RAW.CUSTOMERS
+
+UNION ALL
+
+SELECT 'ORDERS', COUNT(*)
+FROM ECOMMERCE_DB.RAW.ORDERS
+
+UNION ALL
+
+SELECT 'ORDER_ITEMS', COUNT(*)
+FROM ECOMMERCE_DB.RAW.ORDER_ITEMS
+
+UNION ALL
+
+SELECT 'PRODUCTS', COUNT(*)
+FROM ECOMMERCE_DB.RAW.PRODUCTS
+
+UNION ALL
+
+SELECT 'ORDER_REVIEWS', COUNT(*)
+FROM ECOMMERCE_DB.RAW.ORDER_REVIEWS
+
+UNION ALL
+
+SELECT 'ORDER_PAYMENTS', COUNT(*)
+FROM ECOMMERCE_DB.RAW.ORDER_PAYMENTS;
+SELECT 'SALES' AS view_name, COUNT(*) AS row_count
+FROM ECOMMERCE_DB.STAGING.SALES
+
+UNION ALL
+
+SELECT 'CUSTOMER_REVIEWS', COUNT(*)
+FROM ECOMMERCE_DB.STAGING.CUSTOMER_REVIEWS;
+SELECT *
+FROM ECOMMERCE_DB.ANALYTICS.REVENUE_SUMMARY
+LIMIT 10;
+
+SELECT *
+FROM ECOMMERCE_DB.ANALYTICS.CUSTOMER_SATISFACTION
+LIMIT 10;
+SELECT 'SALES' AS view_name, COUNT(*) AS row_count
+FROM ECOMMERCE_DB.STAGING.SALES
+
+UNION ALL
+
+SELECT 'CUSTOMER_REVIEWS', COUNT(*)
+FROM ECOMMERCE_DB.STAGING.CUSTOMER_REVIEWS;
+SELECT *
+FROM ECOMMERCE_DB.ANALYTICS.REVENUE_SUMMARY
+LIMIT 10;
